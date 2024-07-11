@@ -36,9 +36,9 @@ app.add_middleware(
 
 
 @app.post("/message")
-def message(data: MessageRequest):
+async def message(data: MessageRequest):
     print("calling workflow")
-    workflow_run_id = create(state="initial")
+    workflow_run_id = await create(state="initial")
     return {"messageId": workflow_run_id}
 
 
