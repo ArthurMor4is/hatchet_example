@@ -1,3 +1,4 @@
+import asyncio
 from .hatchet import hatchet
 from hatchet_sdk import Context
 from ..api_hatchet.service import create
@@ -5,10 +6,10 @@ import time
 @hatchet.workflow()
 class BasicRagWorkflow:
     @hatchet.step()
-    def call_children(self, context: Context):
+    async def call_children(self, context: Context):
         state = context.input.get("state")
         print(f"{state}: Initializing workflow at time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
-        time.sleep(10)
+        await asyncio.sleep(10)
         if state == "initial":
             next_state = "children"
         elif state == "children":
@@ -18,9 +19,12 @@ class BasicRagWorkflow:
 
         child_workflow_run_ids = []
         if next_state:
-            for _ in range(5):
-                child_workflow_run_id = create(state=next_state)
-                child_workflow_run_ids.append(child_workflow_run_id)
+            for _ in range(5):                
+                child_workflow_run = await context.aio.spawn_workflow(
+                    "BasicRagWorkflow", {"state": next_state}
+                )
+
+                child_workflow_run_ids.append(child_workflow_run.workflow_run_id)
         
         print(f"{state}: Finished call_children at time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
         return {"child_workflow_run_ids": child_workflow_run_ids}
